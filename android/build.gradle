@@ -3,9 +3,6 @@ allprojects {
         google()
         mavenCentral()
         maven {
-            url "https://repo.arthenica.com/public"
-        }
-        maven {
             url "https://jitpack.io"
         }
     }

@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,9 +27,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Check Arthenica repo
-        run: curl -IL https://repo.arthenica.com/public/com/arthenica/ffmpeg-kit-full-gpl/6.0-2/ffmpeg-kit-full-gpl-6.0-2.pom
 
       - name: Build APK
         run: flutter build apk --release
