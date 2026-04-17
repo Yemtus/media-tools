@@ -1,21 +1,20 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
-import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/ffprobe_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:path/path.dart' as p;
 import '../models/media_file.dart';
 
 class FFmpegService {
   int? _activeSessionId;
 
-  // ─── Probe ───────────────────────────────────────────────────────────────
-
   Future<MediaFile?> probeFile(String filePath) async {
     try {
       final file = File(filePath);
       final size = await file.length();
       final name = p.basename(filePath);
-      final ext = p.extension(filePath).toLowerCase();
+      final ext  = p.extension(filePath).toLowerCase();
 
       final videoExts = ['.mp4', '.mkv', '.mov', '.avi', '.webm', '.flv'];
       final audioExts = ['.mp3', '.aac', '.m4a', '.wav', '.ogg', '.flac'];
@@ -42,13 +41,11 @@ class FFmpegService {
           final s = (d.inSeconds % 60).toString().padLeft(2, '0');
           duration = '$h:$m:$s';
         }
-
         final rawBitrate = info.getBitrate();
         if (rawBitrate != null) {
           final kbps = (int.tryParse(rawBitrate) ?? 0) ~/ 1000;
           bitrate = '${kbps}kbps';
         }
-
         final streams = info.getStreams();
         if (streams != null) {
           for (final stream in streams) {
@@ -80,8 +77,6 @@ class FFmpegService {
     }
   }
 
-  // ─── Compress Video ───────────────────────────────────────────────────────
-
   Future<bool> compressVideo({
     required String inputPath,
     required String outputPath,
@@ -89,21 +84,15 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = await _getFileDurationMs(inputPath);
-    final bitrate = settings.customBitrate ?? '1500k';
+    final bitrate   = settings.customBitrate   ?? '1500k';
     final resolution = settings.customResolution ?? '1280x720';
 
     final cmd = '-i "$inputPath" '
-        '-vcodec libx264 '
-        '-b:v $bitrate '
-        '-vf scale=$resolution '
-        '-acodec aac '
-        '-b:a 128k '
-        '-y "$outputPath"';
+        '-vcodec libx264 -b:v $bitrate -vf scale=$resolution '
+        '-acodec aac -b:a 128k -y "$outputPath"';
 
     return _execute(cmd, duration, onProgress);
   }
-
-  // ─── Compress Audio ───────────────────────────────────────────────────────
 
   Future<bool> compressAudio({
     required String inputPath,
@@ -113,16 +102,9 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = await _getFileDurationMs(inputPath);
-
-    final cmd = '-i "$inputPath" '
-        '-codec:a ${format.codec} '
-        '-b:a $bitrate '
-        '-y "$outputPath"';
-
+    final cmd = '-i "$inputPath" -codec:a ${format.codec} -b:a $bitrate -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
   }
-
-  // ─── Trim Video ───────────────────────────────────────────────────────────
 
   Future<bool> trimVideo({
     required String inputPath,
@@ -131,17 +113,10 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = trim.duration.inMilliseconds.toDouble();
-
-    final cmd = '-i "$inputPath" '
-        '-ss ${trim.toFFmpegStart()} '
-        '-t ${trim.toFFmpegDuration()} '
-        '-c copy '
-        '-y "$outputPath"';
-
+    final cmd = '-i "$inputPath" -ss ${trim.toFFmpegStart()} '
+        '-t ${trim.toFFmpegDuration()} -c copy -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
   }
-
-  // ─── Trim Audio ───────────────────────────────────────────────────────────
 
   Future<bool> trimAudio({
     required String inputPath,
@@ -150,17 +125,10 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = trim.duration.inMilliseconds.toDouble();
-
-    final cmd = '-i "$inputPath" '
-        '-ss ${trim.toFFmpegStart()} '
-        '-t ${trim.toFFmpegDuration()} '
-        '-c copy '
-        '-y "$outputPath"';
-
+    final cmd = '-i "$inputPath" -ss ${trim.toFFmpegStart()} '
+        '-t ${trim.toFFmpegDuration()} -c copy -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
   }
-
-  // ─── Convert Video to Audio ───────────────────────────────────────────────
 
   Future<bool> convertVideoToAudio({
     required String inputPath,
@@ -169,18 +137,11 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = await _getFileDurationMs(inputPath);
-    final bitrate = settings.audioBitrate ?? '192k';
-
-    final cmd = '-i "$inputPath" '
-        '-vn '
-        '-codec:a ${settings.outputFormat.codec} '
-        '-b:a $bitrate '
-        '-y "$outputPath"';
-
+    final bitrate  = settings.audioBitrate ?? '192k';
+    final cmd = '-i "$inputPath" -vn -codec:a ${settings.outputFormat.codec} '
+        '-b:a $bitrate -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
   }
-
-  // ─── Split Video by Time ──────────────────────────────────────────────────
 
   Future<List<String>> splitVideoByTime({
     required String inputPath,
@@ -191,21 +152,12 @@ class FFmpegService {
     final duration = await _getFileDurationMs(inputPath);
     final ext = p.extension(inputPath);
     final outputPattern = p.join(outputDir, 'part_%03d$ext');
-
-    final cmd = '-i "$inputPath" '
-        '-f segment '
-        '-segment_time $segmentSeconds '
-        '-c copy '
-        '-reset_timestamps 1 '
-        '-y "$outputPattern"';
-
+    final cmd = '-i "$inputPath" -f segment -segment_time $segmentSeconds '
+        '-c copy -reset_timestamps 1 -y "$outputPattern"';
     final success = await _execute(cmd, duration, onProgress);
     if (!success) return [];
-
     return _listOutputFiles(outputDir, 'part_', ext);
   }
-
-  // ─── Split Video Equal Parts ──────────────────────────────────────────────
 
   Future<List<String>> splitVideoEqualParts({
     required String inputPath,
@@ -223,8 +175,6 @@ class FFmpegService {
     );
   }
 
-  // ─── Split Audio by Time ──────────────────────────────────────────────────
-
   Future<List<String>> splitAudioByTime({
     required String inputPath,
     required String outputDir,
@@ -234,21 +184,12 @@ class FFmpegService {
     final duration = await _getFileDurationMs(inputPath);
     final ext = p.extension(inputPath);
     final outputPattern = p.join(outputDir, 'part_%03d$ext');
-
-    final cmd = '-i "$inputPath" '
-        '-f segment '
-        '-segment_time $segmentSeconds '
-        '-c copy '
-        '-reset_timestamps 1 '
-        '-y "$outputPattern"';
-
+    final cmd = '-i "$inputPath" -f segment -segment_time $segmentSeconds '
+        '-c copy -reset_timestamps 1 -y "$outputPattern"';
     final success = await _execute(cmd, duration, onProgress);
     if (!success) return [];
-
     return _listOutputFiles(outputDir, 'part_', ext);
   }
-
-  // ─── Cancel ───────────────────────────────────────────────────────────────
 
   Future<void> cancel() async {
     if (_activeSessionId != null) {
@@ -258,8 +199,6 @@ class FFmpegService {
       await FFmpegKit.cancel();
     }
   }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
 
   Future<bool> _execute(
     String command,
@@ -279,7 +218,7 @@ class FFmpegService {
       (stats) {
         if (onProgress != null && totalDurationMs > 0) {
           final currentMs = stats.getTime().toDouble();
-          final progress = (currentMs / totalDurationMs).clamp(0.0, 1.0);
+          final progress  = (currentMs / totalDurationMs).clamp(0.0, 1.0);
           onProgress(progress);
         }
       },
@@ -306,12 +245,12 @@ class FFmpegService {
 
   List<String> _listOutputFiles(String dir, String prefix, String ext) {
     try {
-      final directory = Directory(dir);
-      return directory
+      return Directory(dir)
           .listSync()
           .whereType<File>()
           .map((f) => f.path)
-          .where((path) => p.basename(path).startsWith(prefix) && path.endsWith(ext))
+          .where((path) =>
+              p.basename(path).startsWith(prefix) && path.endsWith(ext))
           .toList()
         ..sort();
     } catch (_) {
@@ -319,6 +258,3 @@ class FFmpegService {
     }
   }
 }
-
-// dart:async Completer needed
-import 'dart:async';
