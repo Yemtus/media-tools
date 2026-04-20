@@ -87,9 +87,10 @@ class FFmpegService {
     final bitrate   = settings.customBitrate   ?? '1500k';
     final resolution = settings.customResolution ?? '1280x720';
 
-    final cmd = '-i "$inputPath" '
-        '-vcodec libx264 -b:v $bitrate -vf scale=$resolution '
-        '-acodec aac -b:a 128k -y "$outputPath"';
+   final resolutionFixed = resolution.replaceAll('x', ':');
+final cmd = '-i "$inputPath" '
+    '-vcodec libx264 -b:v $bitrate -vf scale=$resolutionFixed '
+    '-acodec aac -b:a 128k -y "$outputPath"';
 
     return _execute(cmd, duration, onProgress);
   }

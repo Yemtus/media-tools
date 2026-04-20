@@ -30,43 +30,41 @@ class FileService {
     return true;
   }
 
-  Future<String?> pickVideoFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'm4v', '3gp'],
-      allowMultiple: false,
-    );
-    return result?.files.single.path;
-  }
+Future<String?> pickVideoFile() async {
+  await requestStoragePermission();
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['mp4', 'mkv', 'mov', 'avi', 'webm', 'flv', 'm4v', '3gp'],
+    allowMultiple: false,
+  );
+  return result?.files.single.path;
+}
 
-  Future<String?> pickAudioFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mp3', 'aac', 'm4a', 'wav', 'ogg', 'flac', 'opus'],
-      allowMultiple: false,
-    );
-    return result?.files.single.path;
-  }
+Future<String?> pickAudioFile() async {
+  await requestStoragePermission();
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['mp3', 'aac', 'm4a', 'wav', 'ogg', 'flac', 'opus'],
+    allowMultiple: false,
+  );
+  return result?.files.single.path;
+}
 
-  Future<String?> pickMediaFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.media,
-      allowMultiple: false,
-    );
-    return result?.files.single.path;
-  }
+Future<String?> pickMediaFile() async {
+  await requestStoragePermission();
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.media,
+    allowMultiple: false,
+  );
+  return result?.files.single.path;
+}
 
-  Future<String> getOutputDir() async {
-    Directory dir;
-    if (Platform.isAndroid) {
-      dir = Directory('/storage/emulated/0/MediaTools');
-    } else {
-      final docs = await getApplicationDocumentsDirectory();
-      dir = Directory(p.join(docs.path, 'MediaTools'));
-    }
-    if (!await dir.exists()) await dir.create(recursive: true);
-    return dir.path;
-  }
+ Future<String> getOutputDir() async {
+  final docs = await getApplicationDocumentsDirectory();
+  final dir = Directory(p.join(docs.path, 'MediaTools'));
+  if (!await dir.exists()) await dir.create(recursive: true);
+  return dir.path;
+}
 
   Future<String> buildOutputPath({
     required String inputPath,
