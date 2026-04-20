@@ -160,14 +160,24 @@ class _ProcessingScreenState extends State<ProcessingScreen>
           success = splitParts.isNotEmpty;
           break;
         case JobType.splitAudio:
-          splitParts = await provider.ffmpeg.splitAudioByTime(
-            inputPath: _job.inputPath,
-            outputDir: _job.outputPath,
-            segmentSeconds: widget.splitSettings!.value,
-            onProgress: onProgress,
-          );
-          success = splitParts.isNotEmpty;
-          break;
+  final s = widget.splitSettings!;
+  if (s.mode == SplitMode.equalParts) {
+    splitParts = await provider.ffmpeg.splitAudioEqualParts(
+      inputPath: _job.inputPath,
+      outputDir: _job.outputPath,
+      parts: s.value,
+      onProgress: onProgress,
+    );
+  } else {
+    splitParts = await provider.ffmpeg.splitAudioByTime(
+      inputPath: _job.inputPath,
+      outputDir: _job.outputPath,
+      segmentSeconds: s.value,
+      onProgress: onProgress,
+    );
+  }
+  success = splitParts.isNotEmpty;
+  break;
       }
     } catch (e) {
       success = false;

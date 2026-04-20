@@ -177,6 +177,21 @@ final cmd = '-i "$inputPath" '
   }
 
   Future<List<String>> splitAudioByTime({
+    Future<List<String>> splitAudioEqualParts({
+  required String inputPath,
+  required String outputDir,
+  required int parts,
+  void Function(double progress)? onProgress,
+}) async {
+  final durationMs = await _getFileDurationMs(inputPath);
+  final segmentSeconds = ((durationMs / 1000) / parts).ceil();
+  return splitAudioByTime(
+    inputPath: inputPath,
+    outputDir: outputDir,
+    segmentSeconds: segmentSeconds,
+    onProgress: onProgress,
+  );
+}
     required String inputPath,
     required String outputDir,
     required int segmentSeconds,
