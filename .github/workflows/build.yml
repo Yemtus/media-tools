@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +24,7 @@ jobs:
         with:
           flutter-version: '3.27.4'
           channel: 'stable'
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
@@ -28,14 +32,11 @@ jobs:
       - name: Build APKs
         run: flutter build apk --release --split-per-abi
 
-      - name: Upload arm64 APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: media-tools-arm64
-          path: build/app/outputs/apk/release/app-release-arm64-v8a-release.apk
+      - name: List APK outputs
+        run: find build/app/outputs/apk -name "*.apk"
 
-      - name: Upload arm32 APK
+      - name: Upload all APKs
         uses: actions/upload-artifact@v4
         with:
-          name: media-tools-arm32
-          path: build/app/outputs/apk/release/app-release-armeabi-v7a-release.apk
+          name: media-tools-apks
+          path: build/app/outputs/apk/release/*.apk
