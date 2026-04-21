@@ -84,14 +84,12 @@ class FFmpegService {
     void Function(double progress)? onProgress,
   }) async {
     final duration = await _getFileDurationMs(inputPath);
-    final bitrate   = settings.customBitrate   ?? '1500k';
+    final bitrate = settings.customBitrate ?? '1500k';
     final resolution = settings.customResolution ?? '1280x720';
-
-   final resolutionFixed = resolution.replaceAll('x', ':');
-final cmd = '-i "$inputPath" '
-    '-vcodec libx264 -b:v $bitrate -vf scale=$resolutionFixed '
-    '-acodec aac -b:a 128k -y "$outputPath"';
-
+    final resolutionFixed = resolution.replaceAll('x', ':');
+    final cmd = '-i "$inputPath" '
+        '-vcodec libx264 -b:v $bitrate -vf scale=$resolutionFixed '
+        '-acodec aac -b:a 128k -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
   }
 
@@ -138,7 +136,7 @@ final cmd = '-i "$inputPath" '
     void Function(double progress)? onProgress,
   }) async {
     final duration = await _getFileDurationMs(inputPath);
-    final bitrate  = settings.audioBitrate ?? '192k';
+    final bitrate = settings.audioBitrate ?? '192k';
     final cmd = '-i "$inputPath" -vn -codec:a ${settings.outputFormat.codec} '
         '-b:a $bitrate -y "$outputPath"';
     return _execute(cmd, duration, onProgress);
@@ -177,21 +175,6 @@ final cmd = '-i "$inputPath" '
   }
 
   Future<List<String>> splitAudioByTime({
-    Future<List<String>> splitAudioEqualParts({
-  required String inputPath,
-  required String outputDir,
-  required int parts,
-  void Function(double progress)? onProgress,
-}) async {
-  final durationMs = await _getFileDurationMs(inputPath);
-  final segmentSeconds = ((durationMs / 1000) / parts).ceil();
-  return splitAudioByTime(
-    inputPath: inputPath,
-    outputDir: outputDir,
-    segmentSeconds: segmentSeconds,
-    onProgress: onProgress,
-  );
-}
     required String inputPath,
     required String outputDir,
     required int segmentSeconds,
@@ -205,6 +188,22 @@ final cmd = '-i "$inputPath" '
     final success = await _execute(cmd, duration, onProgress);
     if (!success) return [];
     return _listOutputFiles(outputDir, 'part_', ext);
+  }
+
+  Future<List<String>> splitAudioEqualParts({
+    required String inputPath,
+    required String outputDir,
+    required int parts,
+    void Function(double progress)? onProgress,
+  }) async {
+    final durationMs = await _getFileDurationMs(inputPath);
+    final segmentSeconds = ((durationMs / 1000) / parts).ceil();
+    return splitAudioByTime(
+      inputPath: inputPath,
+      outputDir: outputDir,
+      segmentSeconds: segmentSeconds,
+      onProgress: onProgress,
+    );
   }
 
   Future<void> cancel() async {
@@ -269,8 +268,7 @@ final cmd = '-i "$inputPath" '
               p.basename(path).startsWith(prefix) && path.endsWith(ext))
           .toList()
         ..sort();
-    } catch (_) {
-      return [];
-    }
+    } catch (_) {}
+    return [];
   }
 }
